@@ -44,10 +44,6 @@ cornerstoneWADOImageLoader = {};
   }
 
   function calculateMinMax(imageFrame) {
-    if (imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
-      return;
-    }
-
     var minMax = cornerstoneWADOImageLoader.getMinMax(imageFrame.pixelData);
     imageFrame.smallestPixelValue = minMax.min;
     imageFrame.largestPixelValue = minMax.max;

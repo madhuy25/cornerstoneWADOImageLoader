@@ -109,12 +109,10 @@
         image.render = cornerstone.renderGrayscaleImage;
       }
 
-      // calculate min/max if not supplied
-      if(image.minPixelValue === undefined || image.maxPixelValue === undefined) {
-        var minMax = cornerstoneWADOImageLoader.getMinMax(imageFrame.pixelData);
-        image.minPixelValue = minMax.min;
-        image.maxPixelValue = minMax.max;
-      }
+      // Calculate min/max pixel values (do not trust DICOM Headers)
+      var minMax = cornerstoneWADOImageLoader.getMinMax(imageFrame.pixelData);
+      image.minPixelValue = minMax.min;
+      image.maxPixelValue = minMax.max;
 
       // Modality LUT
       if(modalityLutModule.modalityLUTSequence &&
