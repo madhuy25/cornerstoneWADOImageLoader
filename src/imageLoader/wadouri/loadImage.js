@@ -1,4 +1,3 @@
-import { $ } from '../../externalModules.js';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';
 import dataSetCacheManager from './dataSetCacheManager.js';
@@ -7,67 +6,96 @@ import getPixelData from './getPixelData.js';
 import { xhrRequest } from '../internal/index.js';
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache (image) {
-  image.decache = function () {
+function addDecache (imageLoadObject, imageId) {
+  imageLoadObject.decache = function () {
     // console.log('decache');
-    const parsedImageId = parseImageId(image.imageId);
+    const parsedImageId = parseImageId(imageId);
 
     dataSetCacheManager.unload(parsedImageId.url);
   };
 }
 
-function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
+function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options, callbacks) {
   const start = new Date().getTime();
-  const deferred = $.Deferred();
+  const imageLoadObject = {
+    cancelFn: undefined
+  };
 
-  dataSetPromise.then(function (dataSet/* , xhr*/) {
-    const pixelData = getPixelData(dataSet, frame);
-    const transferSyntax = dataSet.string('x00020010');
+  imageLoadObject.promise = new Promise((resolve, reject) => {
+    dataSetPromise.then((dataSet/* , xhr*/) => {
+      const pixelData = getPixelData(dataSet, frame);
+      const transferSyntax = dataSet.string('x00020010');
+      const loadEnd = new Date().getTime();
+      const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+
+      addDecache(imageLoadObject, imageId);
+
+      imagePromise.then((image) => {
+        image.data = dataSet;
+        image.sharedCacheKey = sharedCacheKey;
+        const end = new Date().getTime();
+
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
+        if (callbacks !== undefined && callbacks.imageDoneCallback !== undefined) {
+          callbacks.imageDoneCallback(image);
+        }
+        resolve(image);
+      }, function (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error,
+          dataSet
+        });
+      });
+    }, function (error) {
+      // Reject the error
+      reject({
+        error
+      });
+    });
+  });
+
+  return imageLoadObject;
+}
+
+function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
+  const start = new Date().getTime();
+
+  const promise = new Promise((resolve, reject) => {
     const loadEnd = new Date().getTime();
-    const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    let imagePromise;
 
-    imagePromise.then(function (image) {
+    try {
+      const pixelData = getPixelData(dataSet, frame);
+      const transferSyntax = dataSet.string('x00020010');
+
+      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    } catch (error) {
+      // Reject the error, and the dataSet
+      reject({
+        error,
+        dataSet
+      });
+
+      return;
+    }
+
+    imagePromise.then((image) => {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
       const end = new Date().getTime();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
-      addDecache(image);
-      deferred.resolve(image);
-    }, function (error) {
-      deferred.reject(error);
-    });
-  }, function (error) {
-    deferred.reject(error);
+      resolve(image);
+    }, reject);
   });
 
-  return deferred;
-}
-
-function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
-  const start = new Date().getTime();
-  const deferred = $.Deferred();
-
-  const pixelData = getPixelData(dataSet, frame);
-  const transferSyntax = dataSet.string('x00020010');
-  const loadEnd = new Date().getTime();
-  const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-
-  imagePromise.then((image) => {
-    image.data = dataSet;
-    image.sharedCacheKey = sharedCacheKey;
-    const end = new Date().getTime();
-
-    image.loadTimeInMS = loadEnd - start;
-    image.totalTimeInMS = end - start;
-    addDecache(image);
-    deferred.resolve(image);
-  }, function (error) {
-    deferred.reject(error);
-  });
-
-  return deferred;
+  return {
+    promise,
+    cancelFn: undefined
+  };
 }
 
 function getLoaderForScheme (scheme) {
