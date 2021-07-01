@@ -1,3 +1,5 @@
+import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker.js';
+
 import { getOptions } from './internal/options.js';
 
 // the taskId to assign to the next task added via addTask()
@@ -15,17 +17,14 @@ const options = getOptions();
 const defaultConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
-  webWorkerPath: '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
   webWorkerTaskPaths: [],
   taskConfiguration: {
     decodeTask: {
-      loadCodecsOnStartup: true,
       initializeCodecsOnStartup: false,
-      codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
       usePDFJS: false,
-      strict: options.strict
-    }
-  }
+      strict: options.strict,
+    },
+  },
 };
 
 let config;
@@ -37,13 +36,13 @@ const statistics = {
   numTasksExecuting: 0,
   numTasksCompleted: 0,
   totalTaskTimeInMS: 0,
-  totalTimeDelayedInMS: 0
+  totalTimeDelayedInMS: 0,
 };
 
 /**
  * Function to start a task on a web worker
  */
-function startTaskOnWebWorker () {
+function startTaskOnWebWorker() {
   // return immediately if no decode tasks to do
   if (!tasks.length) {
     return;
@@ -68,11 +67,14 @@ function startTaskOnWebWorker () {
       // assign this task to this web worker and send the web worker
       // a message to execute it
       webWorkers[i].task = task;
-      webWorkers[i].worker.postMessage({
-        taskType: task.taskType,
-        workerIndex: i,
-        data: task.data
-      }, task.transferList);
+      webWorkers[i].worker.postMessage(
+        {
+          taskType: task.taskType,
+          workerIndex: i,
+          data: task.data,
+        },
+        task.transferList
+      );
       statistics.numTasksExecuting++;
 
       return;
@@ -89,7 +91,7 @@ function startTaskOnWebWorker () {
  * Function to handle a message from a web worker
  * @param msg
  */
-function handleMessageFromWorker (msg) {
+function handleMessageFromWorker(msg) {
   // console.log('handleMessageFromWorker', msg.data);
   if (msg.data.taskType === 'initialize') {
     webWorkers[msg.data.workerIndex].status = 'ready';
@@ -97,7 +99,10 @@ function handleMessageFromWorker (msg) {
   } else {
     const start = webWorkers[msg.data.workerIndex].task.start;
 
-    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
+    const action = msg.data.status === 'success' ? 'resolve' : 'reject';
+
+    webWorkers[msg.data.workerIndex].task.deferred[action](msg.data.result);
+
     webWorkers[msg.data.workerIndex].task = undefined;
 
     statistics.numTasksExecuting--;
@@ -115,24 +120,24 @@ function handleMessageFromWorker (msg) {
 /**
  * Spawns a new web worker
  */
-function spawnWebWorker () {
+function spawnWebWorker() {
   // prevent exceeding maxWebWorkers
   if (webWorkers.length >= config.maxWebWorkers) {
     return;
   }
 
   // spawn the webworker
-  const worker = new Worker(config.webWorkerPath);
+  const worker = new cornerstoneWADOImageLoaderWebWorker();
 
   webWorkers.push({
     worker,
-    status: 'initializing'
+    status: 'initializing',
   });
   worker.addEventListener('message', handleMessageFromWorker);
   worker.postMessage({
     taskType: 'initialize',
     workerIndex: webWorkers.length - 1,
-    config
+    config,
   });
 }
 
@@ -140,7 +145,7 @@ function spawnWebWorker () {
  * Initialization function for the web worker manager - spawns web workers
  * @param configObject
  */
-function initialize (configObject) {
+function initialize(configObject) {
   configObject = configObject || defaultConfig;
 
   // prevent being initialized more than once
@@ -150,7 +155,8 @@ function initialize (configObject) {
 
   config = configObject;
 
-  config.maxWebWorkers = config.maxWebWorkers || (navigator.hardwareConcurrency || 1);
+  config.maxWebWorkers =
+    config.maxWebWorkers || navigator.hardwareConcurrency || 1;
 
   // Spawn new web workers
   if (!config.startWebWorkersOnDemand) {
@@ -161,18 +167,32 @@ function initialize (configObject) {
 }
 
 /**
+ * Terminate all running web workers.
+ */
+function terminate() {
+  for (let i = 0; i < webWorkers.length; i++) {
+    webWorkers[i].worker.terminate();
+  }
+  webWorkers.length = 0;
+  config = undefined;
+}
+
+/**
  * dynamically loads a web worker task
  * @param sourcePath
  * @param taskConfig
  */
-function loadWebWorkerTask (sourcePath, taskConfig) {
+function loadWebWorkerTask(sourcePath, taskConfig) {
   // add it to the list of web worker tasks paths so on demand web workers
   // load this properly
   config.webWorkerTaskPaths.push(sourcePath);
 
   // if a task specific configuration is provided, merge it into the config
   if (taskConfig) {
-    config.taskConfiguration = Object.assign(config.taskConfiguration, taskConfig);
+    config.taskConfiguration = Object.assign(
+      config.taskConfiguration,
+      taskConfig
+    );
   }
 
   // tell each spawned web worker to load this task
@@ -181,7 +201,7 @@ function loadWebWorkerTask (sourcePath, taskConfig) {
       taskType: 'loadWebWorkerTask',
       workerIndex: webWorkers.length - 1,
       sourcePath,
-      config
+      config,
     });
   }
 }
@@ -195,7 +215,7 @@ function loadWebWorkerTask (sourcePath, taskConfig) {
  * @param transferList - optional array of data to transfer to web worker
  * @returns {*}
  */
-function addTask (taskType, data, priority = 0, transferList) {
+function addTask(taskType, data, priority = 0, transferList) {
   if (!config) {
     initialize();
   }
@@ -204,7 +224,7 @@ function addTask (taskType, data, priority = 0, transferList) {
   const promise = new Promise((resolve, reject) => {
     deferred = {
       resolve,
-      reject
+      reject,
     };
   });
 
@@ -228,7 +248,7 @@ function addTask (taskType, data, priority = 0, transferList) {
     data,
     deferred,
     priority,
-    transferList
+    transferList,
   });
 
   // try to start a task on the web worker since we just added a new task and a web worker may be available
@@ -236,7 +256,7 @@ function addTask (taskType, data, priority = 0, transferList) {
 
   return {
     taskId,
-    promise
+    promise,
   };
 }
 
@@ -246,7 +266,7 @@ function addTask (taskType, data, priority = 0, transferList) {
  * @param priority - priority of the task (defaults to 0), > 0 is higher, < 0 is lower
  * @returns boolean - true on success, false if taskId not found
  */
-function setTaskPriority (taskId, priority = 0) {
+function setTaskPriority(taskId, priority = 0) {
   // search for this taskId
   for (let i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
@@ -279,7 +299,7 @@ function setTaskPriority (taskId, priority = 0) {
  * @param reason - optional reason the task was rejected
  * @returns boolean - true on success, false if taskId not found
  */
-function cancelTask (taskId, reason) {
+function cancelTask(taskId, reason) {
   // search for this taskId
   for (let i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
@@ -299,7 +319,7 @@ function cancelTask (taskId, reason) {
  * Function to return the statistics on running web workers
  * @returns object containing statistics
  */
-function getStatistics () {
+function getStatistics() {
   statistics.maxWebWorkers = config.maxWebWorkers;
   statistics.numWebWorkers = webWorkers.length;
   statistics.numTasksQueued = tasks.length;
@@ -313,5 +333,7 @@ export default {
   addTask,
   getStatistics,
   setTaskPriority,
-  cancelTask
+  cancelTask,
+  webWorkers,
+  terminate,
 };

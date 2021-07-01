@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2018-07-29
+### Added
+- Added .terminate() function to webWorkerManager to clean up unnecessary workers (thanks @talkdirty!)
+- Added overlay plane metadata provider paths for group 6000 overlay tags. (thanks @kofifus!)
+
+### Changed
+- BREAKING: Web worker and codec paths no longer need to be specified, the worker is now pulled in using Webpack's worker-loader. The loadCodecsOnStartup option has been removed because it is no longer necessary.
+
+## [2.2.3] - 2018-12-05
+### Added
+- Added default export named 'cornerstoneWADOImageLoader' to the module
+
+### Fixed
+- Switched 'module' in package.json to point to dist/cornerstoneWADOImageLoader.min.js
+
+## [2.2.2] - 2018-10-29
+### Fixed
+- fix(wado-rs): Fix broken case for getTransferSyntaxForContentType
+
+## [2.2.1] - 2018-10-27
+### Fixed
+- Fixed failing build due to missing babel-loader dependency
+
+## [2.2.0] - 2018-10-27
+### Added
+- feat(dev-server) Add webpack-dev-server and hot reloading for development (#211)
+- feat(content-type): Support WADO-RS in cases where transfer-syntax is not explicitly returned (#228)
+- feat(options.beforeSend): Add headers object and parameters to the beforeSend callback to simplify transfer-syntax specification (#227)
+
+### Changed
+- chore(devDependencies): Update all dev dependencies to latest versions
+
+### Fixed
+- Fixed failing build due to Webpack issue (thanks @jssuttles!)
+- fix(loadImage) Fix for custom loaders with WebWorkers (#213) (thanks @jgabrito!)
+- fix(pixelSpacing) Fix Pixel spacing is mistakenly being set to 1.0 / 1.0 (#215) (thanks @galelis!)
+- fix(tests): Fix test timeout for Lossy transfer syntax tests (thanks @maltempi)
+
 ## [2.1.4] - 2018-07-11
 ### Fixed
 - Bad NPM Publish was providing 2.1.2 under the 2.1.3 tag. This commit is only to note that problem.

@@ -40,20 +40,12 @@ Minimal Configuration
 Here is an example of a minimal configuration object.
 
 ``` javascript
-   var config = {
-        webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
-        taskConfiguration: {
-            'decodeTask' : {
-                codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js'
-            }
-        }
+    var config = {
+        maxWebWorkers: navigator.hardwareConcurrency || 1,
+        startWebWorkersOnDemand : true,
     };
     cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 ```
-
-In the example above, you will see two paths, one to the cornerstoneWADOImageLoaderWebWorker.js and one to the
-cornerstoneWADOImageLoaderCodecs.js file.  Both of these files can be found in the dist folder of this repository.
-You must host both of these files on your web server somewhere and provide a path to them.
 
 Advanced Configuration
 ----------------------
@@ -64,7 +56,6 @@ Building on the prior minimal example, you can configure the web worker framewor
     var config = {
         maxWebWorkers: navigator.hardwareConcurrency || 1,
         startWebWorkersOnDemand : true,
-        webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
         webWorkerTaskPaths: [
             '../examples/customWebWorkerTask/sleepTask.js',
             '../examples/customWebWorkerTask/sharpenTask.js'
@@ -72,9 +63,7 @@ Building on the prior minimal example, you can configure the web worker framewor
         ],
         taskConfiguration: {
             'decodeTask' : {
-                loadCodecsOnStartup : true,
                 initializeCodecsOnStartup: false,
-                codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
                 usePDFJS: false
             },
             'sleepTask' : {
@@ -99,11 +88,6 @@ created on initialize (default).
 * webWorkerTaskPaths - This is an array of paths to custom web worker tasks.  See section "Custom Web Worker Tasks"
 below for more information.
 
-* taskConfiguration.decodeTask.loadCodecsOnStartup - By default, the web worker framework will automatically load
-all codecs on startup.  The codecs are quite large and require a bit of CPU (and time) just to load and
-doing it at startup will typically lead to faster initial image display.  You may want to set this to false if you
-don't want to pay the CPU cost up front.  If disabled, the codecs will be loaded on demand once they are required.
-
 * taskConfiguration.decodeTask.initializeCodecsOnStartup - By default, the web worker framework does not initialize
 the JPEG2000 or JPEG-LS decoders on startup.  Initialization takes even more CPU (and time) than loading so it is
 disabled by default.  If you expect to display JPEG-LS or JPEG2000 images frequently, you might want to enable
@@ -126,7 +110,7 @@ If you want to create your own custom web worker tasks, follow the following ste
 2) Add the path to that source file in the webWorkerTaskPaths array
 
 3) Register your custom web worker task with the framework by calling
-   cornerstoneWADOImageLoaderWebWorker.registerTaskHandler() function.  This function accepts an object with
+   self.registerTaskHandler() function.  This function accepts an object with
    three properties:
    * taskType - A unique string used to dispatch task requests to your custom web worker task
    * handler - function that is called when work is dispatched to your custom web worker task

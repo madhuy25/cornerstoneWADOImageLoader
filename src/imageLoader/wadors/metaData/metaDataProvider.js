@@ -2,9 +2,10 @@ import external from '../../../externalModules.js';
 import getNumberValues from './getNumberValues.js';
 import getValue from './getValue.js';
 import getNumberValue from './getNumberValue.js';
+import getOverlayPlaneModule from './getOverlayPlaneModule.js';
 import metaDataManager from '../metaDataManager.js';
 
-function metaDataProvider (type, imageId) {
+function metaDataProvider(type, imageId) {
   const { dicomParser } = external;
   const metaData = metaDataManager.get(imageId);
 
@@ -19,7 +20,7 @@ function metaDataProvider (type, imageId) {
       seriesNumber: getNumberValue(metaData['00200011']),
       studyInstanceUID: getValue(metaData['0020000d']),
       seriesDate: dicomParser.parseDA(getValue(metaData['00080021'])),
-      seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, ''))
+      seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, '')),
     };
   }
 
@@ -27,7 +28,7 @@ function metaDataProvider (type, imageId) {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
-      patientWeight: getNumberValue(metaData['00101030'])
+      patientWeight: getNumberValue(metaData['00101030']),
     };
   }
 
@@ -35,8 +36,10 @@ function metaDataProvider (type, imageId) {
     const imageOrientationPatient = getNumberValues(metaData['00200037'], 6);
     const imagePositionPatient = getNumberValues(metaData['00200032'], 3);
     const pixelSpacing = getNumberValues(metaData['00280030'], 2);
-    let columnPixelSpacing = 1.0;
-    let rowPixelSpacing = 1.0;
+
+    let columnPixelSpacing = null;
+
+    let rowPixelSpacing = null;
 
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
@@ -44,11 +47,20 @@ function metaDataProvider (type, imageId) {
     }
 
     let rowCosines = null;
+
     let columnCosines = null;
 
     if (imageOrientationPatient) {
-      rowCosines = [parseFloat(imageOrientationPatient[0]), parseFloat(imageOrientationPatient[1]), parseFloat(imageOrientationPatient[2])];
-      columnCosines = [parseFloat(imageOrientationPatient[3]), parseFloat(imageOrientationPatient[4]), parseFloat(imageOrientationPatient[5])];
+      rowCosines = [
+        parseFloat(imageOrientationPatient[0]),
+        parseFloat(imageOrientationPatient[1]),
+        parseFloat(imageOrientationPatient[2]),
+      ];
+      columnCosines = [
+        parseFloat(imageOrientationPatient[3]),
+        parseFloat(imageOrientationPatient[4]),
+        parseFloat(imageOrientationPatient[5]),
+      ];
     }
 
     return {
@@ -63,7 +75,7 @@ function metaDataProvider (type, imageId) {
       sliceLocation: getNumberValue(metaData['00201041']),
       pixelSpacing,
       rowPixelSpacing,
-      columnPixelSpacing
+      columnPixelSpacing,
     };
   }
 
@@ -81,12 +93,18 @@ function metaDataProvider (type, imageId) {
       pixelAspectRatio: getValue(metaData['00280034']),
       smallestPixelValue: getNumberValue(metaData['00280106']),
       largestPixelValue: getNumberValue(metaData['00280107']),
-      redPaletteColorLookupTableDescriptor: getNumberValues(metaData['00281101']),
-      greenPaletteColorLookupTableDescriptor: getNumberValues(metaData['00281102']),
-      bluePaletteColorLookupTableDescriptor: getNumberValues(metaData['00281103']),
+      redPaletteColorLookupTableDescriptor: getNumberValues(
+        metaData['00281101']
+      ),
+      greenPaletteColorLookupTableDescriptor: getNumberValues(
+        metaData['00281102']
+      ),
+      bluePaletteColorLookupTableDescriptor: getNumberValues(
+        metaData['00281103']
+      ),
       redPaletteColorLookupTableData: getNumberValues(metaData['00281201']),
       greenPaletteColorLookupTableData: getNumberValues(metaData['00281202']),
-      bluePaletteColorLookupTableData: getNumberValues(metaData['00281203'])
+      bluePaletteColorLookupTableData: getNumberValues(metaData['00281203']),
     };
   }
 
@@ -94,7 +112,7 @@ function metaDataProvider (type, imageId) {
     return {
       // TODO VOT LUT Sequence
       windowCenter: getNumberValues(metaData['00281050'], 1),
-      windowWidth: getNumberValues(metaData['00281051'], 1)
+      windowWidth: getNumberValues(metaData['00281051'], 1),
     };
   }
 
@@ -103,14 +121,14 @@ function metaDataProvider (type, imageId) {
       // TODO VOT LUT Sequence
       rescaleIntercept: getNumberValue(metaData['00281052']),
       rescaleSlope: getNumberValue(metaData['00281053']),
-      rescaleType: getValue(metaData['00281054'])
+      rescaleType: getValue(metaData['00281054']),
     };
   }
 
   if (type === 'sopCommonModule') {
     return {
       sopClassUID: getValue(metaData['00080016']),
-      sopInstanceUID: getValue(metaData['00080018'])
+      sopInstanceUID: getValue(metaData['00080018']),
     };
   }
 
@@ -123,13 +141,22 @@ function metaDataProvider (type, imageId) {
 
     return {
       radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: dicomParser.parseTM(getValue(radiopharmaceuticalInfo['00181072'], 0, '')),
-        radionuclideTotalDose: getNumberValue(radiopharmaceuticalInfo['00181074']),
-        radionuclideHalfLife: getNumberValue(radiopharmaceuticalInfo['00181075'])
-      }
+        radiopharmaceuticalStartTime: dicomParser.parseTM(
+          getValue(radiopharmaceuticalInfo['00181072'], 0, '')
+        ),
+        radionuclideTotalDose: getNumberValue(
+          radiopharmaceuticalInfo['00181074']
+        ),
+        radionuclideHalfLife: getNumberValue(
+          radiopharmaceuticalInfo['00181075']
+        ),
+      },
     };
   }
 
+  if (type === 'overlayPlaneModule') {
+    return getOverlayPlaneModule(metaData);
+  }
 }
 
 export default metaDataProvider;

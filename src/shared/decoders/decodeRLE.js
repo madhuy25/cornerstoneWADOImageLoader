@@ -1,4 +1,4 @@
-function decodeRLE (imageFrame, pixelData) {
+function decodeRLE(imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
@@ -12,7 +12,7 @@ function decodeRLE (imageFrame, pixelData) {
   throw new Error('unsupported pixel format for RLE');
 }
 
-function decode8 (imageFrame, pixelData) {
+function decode8(imageFrame, pixelData) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
@@ -27,6 +27,7 @@ function decode8 (imageFrame, pixelData) {
     outIndex = s;
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {
@@ -52,7 +53,7 @@ function decode8 (imageFrame, pixelData) {
           out[outIndex] = value;
           outIndex += imageFrame.samplesPerPixel;
         }
-      }/* else if (n === -128) {
+      } /* else if (n === -128) {
 
       } // do nothing */
     }
@@ -62,7 +63,7 @@ function decode8 (imageFrame, pixelData) {
   return imageFrame;
 }
 
-function decode8Planar (imageFrame, pixelData) {
+function decode8Planar(imageFrame, pixelData) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
@@ -77,6 +78,7 @@ function decode8Planar (imageFrame, pixelData) {
     outIndex = s * frameSize;
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {
@@ -102,7 +104,7 @@ function decode8Planar (imageFrame, pixelData) {
           out[outIndex] = value;
           outIndex++;
         }
-      }/* else if (n === -128) {
+      } /* else if (n === -128) {
 
       } // do nothing */
     }
@@ -112,7 +114,7 @@ function decode8Planar (imageFrame, pixelData) {
   return imageFrame;
 }
 
-function decode16 (imageFrame, pixelData) {
+function decode16(imageFrame, pixelData) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel * 2);
@@ -125,9 +127,10 @@ function decode16 (imageFrame, pixelData) {
 
   for (let s = 0; s < numSegments; ++s) {
     let outIndex = 0;
-    const highByte = (s === 0 ? 1 : 0);
+    const highByte = s === 0 ? 1 : 0;
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {
@@ -139,17 +142,17 @@ function decode16 (imageFrame, pixelData) {
 
       if (n >= 0 && n <= 127) {
         for (let i = 0; i < n + 1 && outIndex < frameSize; ++i) {
-          out[(outIndex * 2) + highByte] = data[inIndex++];
+          out[outIndex * 2 + highByte] = data[inIndex++];
           outIndex++;
         }
       } else if (n <= -1 && n >= -127) {
         const value = data[inIndex++];
 
         for (let j = 0; j < -n + 1 && outIndex < frameSize; ++j) {
-          out[(outIndex * 2) + highByte] = value;
+          out[outIndex * 2 + highByte] = value;
           outIndex++;
         }
-      }/* else if (n === -128) {
+      } /* else if (n === -128) {
 
       } // do nothing */
     }

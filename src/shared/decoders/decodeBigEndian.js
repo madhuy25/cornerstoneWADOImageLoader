@@ -1,13 +1,12 @@
 /* eslint no-bitwise: 0 */
-function swap16 (val) {
-  return ((val & 0xFF) << 8) |
-    ((val >> 8) & 0xFF);
+function swap16(val) {
+  return ((val & 0xff) << 8) | ((val >> 8) & 0xff);
 }
 
-
-function decodeBigEndian (imageFrame, pixelData) {
+function decodeBigEndian(imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
+
     let offset = pixelData.byteOffset;
     const length = pixelData.length;
     // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
@@ -27,7 +26,6 @@ function decodeBigEndian (imageFrame, pixelData) {
     for (let i = 0; i < imageFrame.pixelData.length; i++) {
       imageFrame.pixelData[i] = swap16(imageFrame.pixelData[i]);
     }
-
   } else if (imageFrame.bitsAllocated === 8) {
     imageFrame.pixelData = pixelData;
   }

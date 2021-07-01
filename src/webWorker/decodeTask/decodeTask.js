@@ -3,9 +3,6 @@ import { initializeJPEGLS } from '../../shared/decoders/decodeJPEGLS.js';
 import calculateMinMax from '../../shared/calculateMinMax.js';
 import decodeImageFrame from '../../shared/decodeImageFrame.js';
 
-// flag to ensure codecs are loaded only once
-let codecsLoaded = false;
-
 // the configuration object for the decodeTask
 let decodeConfig;
 
@@ -13,18 +10,7 @@ let decodeConfig;
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs (config) {
-  // prevent loading codecs more than once
-  if (codecsLoaded) {
-    return;
-  }
-
-  // Load the codecs
-  // console.time('loadCodecs');
-  self.importScripts(config.decodeTask.codecsPath);
-  codecsLoaded = true;
-  // console.timeEnd('loadCodecs');
-
+function loadCodecs(config) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     // console.time('initializeCodecs');
@@ -37,21 +23,21 @@ function loadCodecs (config) {
 /**
  * Task initialization function
  */
-function initialize (config) {
+function initialize(config) {
   decodeConfig = config;
-  if (config.decodeTask.loadCodecsOnStartup) {
-    loadCodecs(config);
-  }
+
+  loadCodecs(config);
 }
 
 /**
  * Task handler function
  */
-function handler (data, doneCallback) {
+function handler(data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
-  const strict = decodeConfig && decodeConfig.decodeTask && decodeConfig.decodeTask.strict;
+  const strict =
+    decodeConfig && decodeConfig.decodeTask && decodeConfig.decodeTask.strict;
   const imageFrame = data.data.imageFrame;
 
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
@@ -63,10 +49,13 @@ function handler (data, doneCallback) {
     data.data.transferSyntax,
     pixelData,
     decodeConfig.decodeTask,
-    data.data.options);
+    data.data.options
+  );
 
   if (!imageFrame.pixelData) {
-    throw new Error('decodeTask: imageFrame.pixelData is undefined after decoding');
+    throw new Error(
+      'decodeTask: imageFrame.pixelData is undefined after decoding'
+    );
   }
 
   calculateMinMax(imageFrame, strict);
@@ -83,5 +72,5 @@ function handler (data, doneCallback) {
 export default {
   taskType: 'decodeTask',
   handler,
-  initialize
+  initialize,
 };

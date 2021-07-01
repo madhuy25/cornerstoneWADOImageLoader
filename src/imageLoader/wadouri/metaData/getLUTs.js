@@ -1,4 +1,4 @@
-function getLUT (pixelRepresentation, lutDataSet) {
+function getLUT(pixelRepresentation, lutDataSet) {
   let numLUTEntries = lutDataSet.uint16('x00283002', 0);
 
   if (numLUTEntries === 0) {
@@ -17,7 +17,7 @@ function getLUT (pixelRepresentation, lutDataSet) {
     id: '1',
     firstValueMapped,
     numBitsPerEntry,
-    lut: []
+    lut: [],
   };
 
   // console.log("minValue=", minValue, "; maxValue=", maxValue);
@@ -32,9 +32,8 @@ function getLUT (pixelRepresentation, lutDataSet) {
   return lut;
 }
 
-
-function getLUTs (pixelRepresentation, lutSequence) {
-  if (!lutSequence || !lutSequence.items.length) {
+function getLUTs(pixelRepresentation, lutSequence) {
+  if (!lutSequence || !lutSequence.items || !lutSequence.items.length) {
     return;
   }
   const luts = [];

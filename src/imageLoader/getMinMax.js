@@ -1,9 +1,11 @@
-export default function getMinMax (storedPixelData) {
+export default function getMinMax(storedPixelData) {
   // we always calculate the min max values since they are not always
   // present in DICOM and we don't want to trust them anyway as cornerstone
   // depends on us providing reliable values for these
   let min = storedPixelData[0];
+
   let max = storedPixelData[0];
+
   let storedPixel;
   const numPixels = storedPixelData.length;
 
@@ -15,6 +17,6 @@ export default function getMinMax (storedPixelData) {
 
   return {
     min,
-    max
+    max,
   };
 }

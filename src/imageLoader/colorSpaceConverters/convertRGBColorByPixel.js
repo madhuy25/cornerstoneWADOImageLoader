@@ -1,4 +1,4 @@
-export default function (imageFrame, rgbaBuffer) {
+export default function(imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }
@@ -7,7 +7,9 @@ export default function (imageFrame, rgbaBuffer) {
   }
 
   const numPixels = imageFrame.length / 3;
+
   let rgbIndex = 0;
+
   let rgbaIndex = 0;
 
   for (let i = 0; i < numPixels; i++) {
